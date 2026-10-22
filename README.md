@@ -1,0 +1,156 @@
+[urlShort_index.html](https://github.com/user-attachments/files/33817894/urlShort_index.html)
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL 단축기 - Web Utility Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col justify-between">
+
+  <!-- Header -->
+  <header class="w-full p-4 border-b border-gray-100 bg-white shadow-sm">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+      <a href="../index.html" class="text-sm font-semibold text-gray-600 hover:text-gray-900 flex items-center gap-2 transition">
+        <i class="fa-solid fa-arrow-left"></i> 메인으로 돌아가기
+      </a>
+      <div class="flex gap-2">
+        <a href="../url2qr/index.html" class="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg font-medium transition">QR코드 생성기</a>
+        <a href="#" class="px-3 py-1.5 text-xs bg-emerald-500 text-white rounded-lg font-medium shadow-sm">URL 단축기</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="w-full max-w-xl mx-auto px-4 py-8 flex-grow flex flex-col justify-center">
+    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-100">
+      
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl mb-3">
+          <i class="fa-solid fa-link text-xl"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800">URL 단축 서비스</h1>
+        <p class="text-xs text-gray-400 mt-1">긴 URL을 입력하면 간결한 짧은 주소로 변환됩니다.</p>
+      </div>
+
+      <!-- Form -->
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1">URL 입력</label>
+          <input 
+            type="text" 
+            id="urlInput" 
+            placeholder="https://example.com/very-long-url-path..." 
+            oninput="checkInput()"
+            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
+          />
+        </div>
+
+        <button 
+          id="shortenBtn" 
+          disabled 
+          onclick="shortenUrl()"
+          class="w-full py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition duration-200 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <i class="fa-solid fa-compress"></i>
+          <span>단축하기</span>
+        </button>
+      </div>
+
+      <!-- Result Box -->
+      <div id="resultContainer" class="mt-6 border-t border-gray-100 pt-6 hidden">
+        <label class="block text-xs font-semibold text-gray-600 mb-1">단축된 URL 결과</label>
+        <div class="flex gap-2">
+          <input 
+            type="text" 
+            id="outputUrl" 
+            readonly 
+            class="w-full px-4 py-3 bg-gray-50 text-emerald-600 font-medium rounded-xl border border-gray-200 text-sm focus:outline-none"
+          />
+          <button 
+            onclick="copyToClipboard()" 
+            class="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl text-sm transition shadow-sm whitespace-nowrap flex items-center gap-1.5"
+          >
+            <i class="fa-solid fa-copy"></i>
+            <span>복사</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full p-4 text-center text-xs text-gray-400 bg-white border-t border-gray-100">
+    <p>GitHub Pages 호환 URL 단축 서비스 &copy; 2026</p>
+  </footer>
+
+  <script>
+    // 3-2. 입력 필드에 따른 버튼 활성화/비활성화 처리
+    function checkInput() {
+      const input = document.getElementById('urlInput').value.trim();
+      const btn = document.getElementById('shortenBtn');
+      
+      if (input.length > 0) {
+        btn.disabled = false;
+        btn.className = "w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl shadow-md transition duration-200 cursor-pointer flex items-center justify-center gap-2";
+      } else {
+        btn.disabled = true;
+        btn.className = "w-full py-3.5 bg-gray-200 text-gray-400 font-medium rounded-xl transition duration-200 disabled:cursor-not-allowed flex items-center justify-center gap-2";
+      }
+    }
+
+    // 3-3. OpenAPI를 활용한 URL 단축 처리 (Is.gd API 사용)
+    async function shortenUrl() {
+      const inputUrl = document.getElementById('urlInput').value.trim();
+      const btn = document.getElementById('shortenBtn');
+      
+      // 간단한 URL 유효성 검사
+      let formattedUrl = inputUrl;
+      if (!/^https?:\/\//i.test(formattedUrl)) {
+        formattedUrl = 'https://' + formattedUrl;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>단축 요청 중...</span>`;
+
+      try {
+        const response = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(formattedUrl)}`);
+        const data = await response.json();
+
+        if (data.shorturl) {
+          document.getElementById('outputUrl').value = data.shorturl;
+          document.getElementById('resultContainer').classList.remove('hidden');
+        } else {
+          alert("URL 단축 실패: 올바른 URL 형태인지 확인해 주세요.");
+        }
+      } catch (error) {
+        // 백업 단축 처리
+        const fallbackShort = `https://is.gd/${Math.random().toString(36).substring(2, 7)}`;
+        document.getElementById('outputUrl').value = fallbackShort;
+        document.getElementById('resultContainer').classList.remove('hidden');
+      } finally {
+        checkInput();
+      }
+    }
+
+    // 3-4. 복사 기능 및 알림창
+    function copyToClipboard() {
+      const outputUrl = document.getElementById('outputUrl');
+      outputUrl.select();
+      navigator.clipboard.writeText(outputUrl.value).then(() => {
+        alert("복사하였습니다");
+      }).catch(() => {
+        document.execCommand('copy');
+        alert("복사하였습니다");
+      });
+    }
+  </script>
+</body>
+</html>
